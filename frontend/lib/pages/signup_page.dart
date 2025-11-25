@@ -6,6 +6,8 @@ import 'welcome_page.dart';
 class SignUpPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController registerIDController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
 
   SignUpPage({super.key});
 
@@ -30,7 +32,7 @@ class SignUpPage extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
 
               const Text(
                 'Sign Up',
@@ -41,6 +43,34 @@ class SignUpPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 30),
+
+              TextField(
+                controller: registerIDController,
+                decoration: InputDecoration(
+                  labelText: 'Responder ID',
+                  labelStyle: const TextStyle(color: Colors.black54),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              TextField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Full name',
+                  labelStyle: const TextStyle(color: Colors.black54),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
 
               TextField(
                 controller: emailController,
@@ -54,7 +84,7 @@ class SignUpPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 15),
 
               TextField(
                 controller: passwordController,
@@ -69,7 +99,7 @@ class SignUpPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 15),
 
               ElevatedButton(
                 onPressed: () {
