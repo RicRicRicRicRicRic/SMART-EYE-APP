@@ -11,7 +11,16 @@ class AlertsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Emergency Alerts')),
+      appBar: AppBar(
+        title: const Text(
+          'Emergency Alerts',
+          style: TextStyle(
+            fontFamily: 'Times New Roman',
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: ListView.builder(
         itemCount: alerts.length,
         itemBuilder: (context, index) => Card(

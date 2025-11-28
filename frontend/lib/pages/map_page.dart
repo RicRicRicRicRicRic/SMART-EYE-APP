@@ -7,17 +7,24 @@ class MapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drone Map'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black, // Makes app bar text/icon dark
-        elevation: 1,
+        title: const Text(
+          'Drone Map',
+          style: TextStyle(
+            fontFamily: 'Times New Roman',
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color(0xFF1E88E5), // same blue as Dashboard
+        foregroundColor: Colors.white, // white text/icons
+        elevation: 2,
       ),
       body: Center(
         child: Container(
           margin: const EdgeInsets.all(20),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[100], // Light background
+            color: Colors.grey[100],
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -45,7 +52,7 @@ class MapScreen extends StatelessWidget {
           ),
         ),
       ),
-      backgroundColor: Colors.white, // Optional: lightens full background
+      backgroundColor: Colors.white,
     );
   }
 }

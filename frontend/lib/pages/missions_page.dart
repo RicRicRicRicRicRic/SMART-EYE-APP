@@ -6,7 +6,16 @@ class MissionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mission Control')),
+      appBar: AppBar(
+        title: const Text(
+          'Mission Control',
+          style: TextStyle(
+            fontFamily: 'Times New Roman',
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: ListView(
         children: const [
           ListTile(leading: Icon(Icons.visibility), title: Text('Surveillance Mode')),
