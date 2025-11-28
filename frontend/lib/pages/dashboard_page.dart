@@ -11,10 +11,25 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SMART-EYE Dashboard'),
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(
+            fontFamily: 'Times New Roman',
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
-        automaticallyImplyLeading:
-          false, // ✅ This removes the back button completely
+        automaticallyImplyLeading: false,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'assets/images/logo.png',
+            width: 120,
+            height: 120,
+            fit: BoxFit.contain,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -40,14 +55,15 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Drone Status',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                  children: const [
+                    Text(
+                      'Drone Status',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text('Battery: 87%'),
                         Text('Altitude: 120m'),
                         Text('Speed: 15 km/h'),
@@ -68,9 +84,10 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Latest Emergency Alert',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Latest Emergency Alert',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                     SizedBox(height: 8),
                     Text('Type: Fire Hazard'),
                     Text('Location: Lat 14.553, Lng 121.047'),
@@ -79,50 +96,65 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
 
-            // Action buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.flight_takeoff),
-                  label: const Text('Launch'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white, // ✅ Makes text & icon white
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.flight_land),
-                  label: const Text('Land'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white, // ✅ Makes text & icon white
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.warning),
-                  label: const Text('Emergency'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white, // ✅ Makes text & icon white
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+            const Spacer(), // pushes buttons to the bottom
 
-            // Navigation shortcuts
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Bottom buttons: Drone actions
+            Column(
               children: [
-                _buildNavButton(context, 'Map', Icons.map, const MapScreen()),
-                _buildNavButton(context, 'Alerts', Icons.notifications, AlertsScreen()),
-                _buildNavButton(context, 'Missions', Icons.flag, const MissionScreen()),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.flight_takeoff),
+                        label: const Text('Launch'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.flight_land),
+                        label: const Text('Land'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.warning),
+                        label: const Text('Emergency'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Bottom buttons: Navigation shortcuts
+                Row(
+                  children: [
+                    Expanded(child: _buildNavButton(context, 'Map', Icons.map, MapScreen())),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildNavButton(context, 'Alerts', Icons.notifications, AlertsScreen())),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildNavButton(context, 'Missions', Icons.flag, MissionScreen())),
+                  ],
+                ),
               ],
             ),
           ],
@@ -133,9 +165,12 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildNavButton(BuildContext context, String label, IconData icon, Widget screen) {
     return ElevatedButton.icon(
-      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => screen)),
+      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
       icon: Icon(icon),
       label: Text(label),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
     );
   }
 }
