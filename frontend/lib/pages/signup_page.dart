@@ -126,27 +126,29 @@ class SignUpPage extends StatelessWidget {
                         // ... collect values ...
 
                         final response = await http.post(
-                          Uri.parse('http://localhost:8000/api/register'),  // or your real backend URL
+                          Uri.parse('http://localhost:3000/register'),
                           headers: {'Content-Type': 'application/json'},
                           body: jsonEncode({
                             'responder_id': registerIDController.text.trim(),
                             'full_name': usernameController.text.trim(),
-                            'contact_number': '', // optional — add field if needed
+                            'contact_number': null,
                             'email': emailController.text.trim(),
                             'password': passwordController.text,
                           }),
                         );
 
                         if (response.statusCode == 201) {
-                          // success → show message, go to login or welcome
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Registration submitted! Waiting for approval.')),
+                            const SnackBar(content: Text('Registration successful! Waiting for admin approval.')),
                           );
                           Navigator.pop(context);
-                        } else {
-                          // error
-                          final msg = jsonDecode(response.body)['detail'] ?? 'Registration failed';
+                        } else if (response.statusCode == 400) {
+                          final msg = jsonDecode(response.body)['detail'] ?? 'Invalid input';
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Server error. Please try again later.')),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(

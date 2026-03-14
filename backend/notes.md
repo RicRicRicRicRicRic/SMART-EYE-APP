@@ -4,7 +4,7 @@
 .\venv\Scripts\Activate.ps1
 
 # Run the FastAPI server: 
-uvicorn main:app --reload
+uvicorn app.main:app --reload --port 3000
 
 # Fix the "Execution Policy" Error (If it happens):
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -13,4 +13,3 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 pip freeze > requirements.txt
 
 # To run a test file inside test folder
-python -m tests.(file name)
