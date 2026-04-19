@@ -7,7 +7,11 @@ from sqlalchemy import text
 
 from .endpoints.register import router as register_router
 
-app = FastAPI(title="Smart Eye API",version="0.1.0",)
+app = FastAPI(
+    title="Smart Eye API",
+    version="0.1.0",
+    redirect_slashes=False,  
+)
 
 app.include_router(register_router)
 
@@ -24,7 +28,6 @@ Base.metadata.create_all(bind=engine)
 @app.get("/test-db")
 def test_database(db: Session = Depends(get_db)):
     try:
-    
         result = db.execute(text("SELECT 1")).scalar()
         return {
             "status": "Database connected!",

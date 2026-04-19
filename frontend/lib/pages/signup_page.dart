@@ -4,6 +4,9 @@ import '../theme/theme.dart';
 import 'welcome_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../constants/api_constants.dart'; // Add this line
 
 class SignUpPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -107,6 +110,7 @@ class SignUpPage extends StatelessWidget {
                       controller: passwordController,
                       obscureText: true,
                       textAlign: TextAlign.center,
+                      maxLength: 72,
                       decoration: InputDecoration(
                         labelText: 'Password',
                         labelStyle: const TextStyle(color: Colors.black54),
@@ -115,6 +119,7 @@ class SignUpPage extends StatelessWidget {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
+                        counterText: "",
                       ),
                     ),
 
@@ -122,35 +127,60 @@ class SignUpPage extends StatelessWidget {
 
                     // Register Button
                     ElevatedButton(
-                      onPressed: () async {
-                        // ... collect values ...
 
-                        final response = await http.post(
-                          Uri.parse('http://localhost:3000/register'),
-                          headers: {'Content-Type': 'application/json'},
-                          body: jsonEncode({
-                            'responder_id': registerIDController.text.trim(),
-                            'full_name': usernameController.text.trim(),
-                            'contact_number': null,
-                            'email': emailController.text.trim(),
-                            'password': passwordController.text,
-                          }),
+                      onPressed: () async {
+                        // Optional: Show loading
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Registering...'), duration: Duration(seconds: 1)),
                         );
 
-                        if (response.statusCode == 201) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Registration successful! Waiting for admin approval.')),
+                        try {
+                          final response = await http.post(
+                            Uri.parse('$baseUrl/register'),   // ← THIS IS THE FIX
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({
+                              'responder_id': registerIDController.text.trim(),
+                              'full_name': usernameController.text.trim(),
+                              'contact_number': null,
+                              'email': emailController.text.trim(),
+                              'password': passwordController.text,
+                            }),
                           );
-                          Navigator.pop(context);
-                        } else if (response.statusCode == 400) {
-                          final msg = jsonDecode(response.body)['detail'] ?? 'Invalid input';
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-                        } else {
+
+                          if (response.statusCode == 201) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Registration successful! Waiting for admin approval.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            Navigator.pop(context);
+                          } else if (response.statusCode == 400) {
+                            final msg = jsonDecode(response.body)['detail'] ?? 'Invalid input';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(msg), backgroundColor: Colors.red),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Server error. Please try again later.')),
+                            );
+                          }
+                        } catch (e) {
+                          String errorMsg = 'Cannot connect to server. Is backend running?';
+
+                          try {
+                            if (e is http.Response) {
+                              final body = jsonDecode(e.body);
+                              errorMsg = body['detail'] ?? body.toString();
+                            }
+                          } catch (_) {}
+
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Server error. Please try again later.')),
+                            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
                           );
                         }
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SmartEyeTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 80),
