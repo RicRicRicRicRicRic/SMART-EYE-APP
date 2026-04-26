@@ -9,6 +9,10 @@ class ResponderCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=72)
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=72)
+
 class ResponderOut(BaseModel):
     responder_id: str         
     full_name: str
@@ -18,3 +22,7 @@ class ResponderOut(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class LoginResponse(BaseModel):
+    message: str
+    responder: ResponderOut

@@ -6,6 +6,7 @@ from .config.settings import settings
 from sqlalchemy import text
 
 from .endpoints.register import router as register_router
+from .endpoints.login_auth import router as login_router
 
 app = FastAPI(
     title="Smart Eye API",
@@ -14,6 +15,7 @@ app = FastAPI(
 )
 
 app.include_router(register_router)
+app.include_router(login_router)
 
 @app.get("/")
 def read_root():

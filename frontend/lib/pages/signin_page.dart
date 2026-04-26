@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert'; // For jsonEncode and jsonDecode
+import 'package:http/http.dart' as http; // For API calls
 import '../widgets/custom_scaffold.dart';
 import '../theme/theme.dart';
+import '../constants/api_constants.dart'; // Import your constants file
 import 'dashboard_page.dart';
 import 'signup_page.dart';
 import 'welcome_page.dart';
@@ -53,6 +56,7 @@ class SignInPage extends StatelessWidget {
                     TextField(
                       controller: emailController,
                       textAlign: TextAlign.center,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email',
                         labelStyle: const TextStyle(color: Colors.black54),
@@ -86,11 +90,55 @@ class SignInPage extends StatelessWidget {
 
                     // Login button
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                      onPressed: () async {
+                        // Basic validation
+                        if (emailController.text.trim().isEmpty || passwordController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter email and password')),
+                          );
+                          return;
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Logging in...'), duration: Duration(seconds: 1)),
                         );
+
+                        try {
+                          // Using baseUrl from api_constants.dart
+                          final response = await http.post(
+                            Uri.parse('$baseUrl/login'),
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({
+                              'email': emailController.text.trim(),
+                              'password': passwordController.text,
+                            }),
+                          );
+
+                          if (response.statusCode == 200) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Login successful!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                            );
+                          } else {
+                            final msg = jsonDecode(response.body)['detail'] ?? 'Login failed';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(msg), backgroundColor: Colors.red),
+                            );
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Cannot connect to server. Is backend running?'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SmartEyeTheme.primaryColor,
@@ -139,5 +187,5 @@ class SignInPage extends StatelessWidget {
         ),
       ),
     );
-  } // closes build
-} // closes SignInPage
+  }
+}

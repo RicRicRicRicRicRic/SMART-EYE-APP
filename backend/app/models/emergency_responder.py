@@ -26,11 +26,10 @@ class EmergencyResponder(Base):
     hashed_password = Column(String(255), nullable=False)
     fcm_token = Column(String(255), nullable=True)
     
-    # ← EXPLICIT values_callable fixes the name vs value mismatch forever
     approval_status = Column(
         SQLEnum(
             ApprovalStatus,
-            values_callable=lambda x: [e.value for e in x],  # forces "Pending" etc.
+            values_callable=lambda x: [e.value for e in x],  
         ),
         nullable=False,
         default=ApprovalStatus.PENDING
