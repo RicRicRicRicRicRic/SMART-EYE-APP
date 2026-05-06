@@ -1,4 +1,3 @@
-#app/endpoints/login_auth.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -7,6 +6,7 @@ import logging
 from ..database import get_db
 from ..models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
 from ..schemas.responder import LoginRequest, LoginResponse
+from ..utils.security import create_access_token   # ← NEW
 
 router = APIRouter(
     prefix="/login",
@@ -35,19 +35,18 @@ async def login_responder(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
             )
-        
+
         if user.approval_status != ApprovalStatus.APPROVED:
             if user.approval_status == ApprovalStatus.PENDING:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Your account is pending admin approval. Please wait."
                 )
-            else: 
+            else:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Your account has been rejected by the admin."
                 )
-
 
         if user.is_active != ActiveStatus.ACTIVE:
             raise HTTPException(
@@ -61,9 +60,13 @@ async def login_responder(
                 detail="Invalid email or password"
             )
 
+        access_token = create_access_token(data={"sub": user.email})
+
         return {
             "message": "Login successful",
-            "responder": user  
+            "responder": user,
+            "access_token": access_token,      
+            "token_type": "bearer"             
         }
 
     except HTTPException:

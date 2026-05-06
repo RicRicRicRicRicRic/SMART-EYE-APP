@@ -1,5 +1,6 @@
 # app/main.py
 from fastapi import FastAPI, Depends
+from fastapi.security import OAuth2PasswordBearer  # Added
 from sqlalchemy.orm import Session
 from .database import get_db, engine, Base
 from .config.settings import settings
@@ -7,6 +8,9 @@ from sqlalchemy import text
 
 from .endpoints.register import router as register_router
 from .endpoints.login_auth import router as login_router
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login") 
 
 app = FastAPI(
     title="Smart Eye API",

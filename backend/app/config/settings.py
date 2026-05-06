@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
     DB_PORT: int = 3306           
+    SECRET_KEY: str = "your-super-secret-key-change-this-in-production-2026"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  
 
     @property
     def DATABASE_URL(self) -> str:

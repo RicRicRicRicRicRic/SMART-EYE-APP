@@ -86,7 +86,7 @@ class SignInPage extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 30),
 
                     // Login button
                     ElevatedButton(
