@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:convert'; // For jsonEncode and jsonDecode
 import 'package:http/http.dart' as http; // For API calls
+import 'package:shared_preferences/shared_preferences.dart'; // Required for token storage
 import '../widgets/custom_scaffold.dart';
 import '../theme/theme.dart';
-import '../constants/api_constants.dart'; // Import your constants file
+import '../constants/api_constants.dart';
 import 'dashboard_page.dart';
 import 'signup_page.dart';
 import 'welcome_page.dart';
@@ -14,13 +15,78 @@ class SignInPage extends StatelessWidget {
 
   SignInPage({super.key});
 
+  // Enhanced login logic with debugging and token storage
+  Future<void> _login(BuildContext context) async {
+    // Basic validation
+    if (emailController.text.trim().isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Logging in...'), duration: Duration(seconds: 1)),
+    );
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': emailController.text.trim(),
+          'password': passwordController.text,
+        }),
+      );
+
+      print("DEBUG LOGIN: Status = ${response.statusCode}");
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        final token = data['access_token'];
+
+        print("DEBUG LOGIN: Token received = ${token != null}");
+
+        if (token != null) {
+          await prefs.setString('access_token', token);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      } else {
+        final msg = data['detail'] ?? 'Login failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      print("DEBUG LOGIN ERROR: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot connect to server. Is backend running?'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomScaffold(
       child: SafeArea(
         child: Stack(
           children: [
-            // Main scrollable content
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
@@ -28,18 +94,14 @@ class SignInPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 60), // space for the back button
-
-                    // LOGO
+                    const SizedBox(height: 60),
                     Image.asset(
                       'assets/images/logo.png',
                       width: 120,
                       height: 120,
                       fit: BoxFit.contain,
                     ),
-
                     const SizedBox(height: 20),
-
                     const Text(
                       'Welcome to SMART-EYE',
                       textAlign: TextAlign.center,
@@ -49,10 +111,7 @@ class SignInPage extends StatelessWidget {
                         color: Colors.black87,
                       ),
                     ),
-
                     const SizedBox(height: 40),
-
-                    // Email TextField
                     TextField(
                       controller: emailController,
                       textAlign: TextAlign.center,
@@ -67,10 +126,7 @@ class SignInPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Password TextField
                     TextField(
                       controller: passwordController,
                       obscureText: true,
@@ -85,61 +141,9 @@ class SignInPage extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 35),
-
-                    // Login button
                     ElevatedButton(
-                      onPressed: () async {
-                        // Basic validation
-                        if (emailController.text.trim().isEmpty || passwordController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter email and password')),
-                          );
-                          return;
-                        }
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Logging in...'), duration: Duration(seconds: 1)),
-                        );
-
-                        try {
-                          // Using baseUrl from api_constants.dart
-                          final response = await http.post(
-                            Uri.parse('$baseUrl/login'),
-                            headers: {'Content-Type': 'application/json'},
-                            body: jsonEncode({
-                              'email': emailController.text.trim(),
-                              'password': passwordController.text,
-                            }),
-                          );
-
-                          if (response.statusCode == 200) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Login successful!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                            );
-                          } else {
-                            final msg = jsonDecode(response.body)['detail'] ?? 'Login failed';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(msg), backgroundColor: Colors.red),
-                            );
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Cannot connect to server. Is backend running?'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
+                      onPressed: () => _login(context), // Calling the enhanced function
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SmartEyeTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 80),
@@ -149,9 +153,7 @@ class SignInPage extends StatelessWidget {
                       ),
                       child: const Text('Login', style: TextStyle(color: Colors.white)),
                     ),
-
                     const SizedBox(height: 10),
-
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -168,8 +170,6 @@ class SignInPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Back button at top-left
             Positioned(
               top: 16,
               left: 16,
