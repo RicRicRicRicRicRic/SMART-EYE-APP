@@ -12,4 +12,4 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 # Save dependencies to txt file:
 pip freeze > requirements.txt
 
-# To run a test file inside test folder
+

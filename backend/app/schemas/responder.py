@@ -1,3 +1,4 @@
+# app/schemas/responder.py
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
@@ -17,9 +18,11 @@ class ResponderOut(BaseModel):
     responder_id: str         
     full_name: str
     email: EmailStr
+    contact_number: Optional[str] = None
     approval_status: str
     is_active: str
     created_at: datetime
+    profile_picture_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -27,4 +30,4 @@ class LoginResponse(BaseModel):
     message: str
     responder: ResponderOut
     access_token: str          
-    token_type: str = "bearer" 
+    token_type: str = "bearer"

@@ -1,6 +1,8 @@
 # app/config/settings.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Settings(BaseSettings):
     PORT: int = 8000               
@@ -9,9 +11,15 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_NAME: str
     DB_PORT: int = 3306           
-    SECRET_KEY: str = "your-super-secret-key-change-this-in-production-2026"
+
+    # JWT
+    SECRET_KEY: str = "change-this-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  
+
+    # Supabase
+    SUPABASE_URL: str
+    SUPABASE_SERVICE_KEY: str
 
     @property
     def DATABASE_URL(self) -> str:

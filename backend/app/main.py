@@ -9,7 +9,8 @@ from sqlalchemy import text
 from .endpoints.register import router as register_router
 from .endpoints.login_auth import router as login_router
 from .endpoints.user_info import router as user_router
-
+from .endpoints.profile_upload import router as profile_upload_router
+from .endpoints.profile_update import router as profile_update_router
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login") 
 
@@ -22,6 +23,8 @@ app = FastAPI(
 app.include_router(register_router)
 app.include_router(login_router)
 app.include_router(user_router)
+app.include_router(profile_upload_router)
+app.include_router(profile_update_router)
 
 @app.get("/")
 def read_root():

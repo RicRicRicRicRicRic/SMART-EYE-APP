@@ -25,6 +25,7 @@ class EmergencyResponder(Base):
     email = Column(String(50), nullable=False, unique=True, index=True)
     hashed_password = Column(String(255), nullable=False)
     fcm_token = Column(String(255), nullable=True)
+    profile_picture_url = Column(String(500), nullable=True)
     
     approval_status = Column(
         SQLEnum(

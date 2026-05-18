@@ -5,8 +5,8 @@ import logging
 
 from ..database import get_db
 from ..models.emergency_responder import EmergencyResponder
-from ..schemas.responder import ResponderOut
-from ..utils.security import verify_token   # We'll use this
+from ..schemas.responder import ResponderOut   # Make sure this is imported
+from ..utils.security import verify_token
 from fastapi.security import OAuth2PasswordBearer
 
 router = APIRouter(
