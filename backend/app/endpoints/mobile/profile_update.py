@@ -1,11 +1,11 @@
-# app/endpoints/profile_update.py
+# app/endpoints/mobile/profile_update.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from ..database import get_db
-from ..models.emergency_responder import EmergencyResponder
-from ..endpoints.user_info import get_current_user
+from ...database import get_db
+from ...models.emergency_responder import EmergencyResponder
+from .user_info import get_current_user
 
 router = APIRouter(prefix="/me", tags=["Profile"])
 

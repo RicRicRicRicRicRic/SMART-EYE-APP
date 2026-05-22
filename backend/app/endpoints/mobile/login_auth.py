@@ -1,13 +1,13 @@
-#app/endpoints/login_auth.py
+#app/endpoints/mobile/login_auth.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import logging
 
-from ..database import get_db
-from ..models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
-from ..schemas.responder import LoginRequest, LoginResponse
-from ..utils.security import create_access_token   # ← NEW
+from ...database import get_db
+from ...models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
+from ...schemas.responder import LoginRequest, LoginResponse
+from ...utils.security import create_access_token   # ← NEW
 
 router = APIRouter(
     prefix="/login",

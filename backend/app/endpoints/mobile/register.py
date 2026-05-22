@@ -1,12 +1,12 @@
-#app/endpoints/register.py
+#app/endpoints/mobile/register.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import logging
 
-from ..database import get_db
-from ..models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
-from ..schemas.responder import ResponderCreate, ResponderOut
+from ...database import get_db
+from ...models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
+from ...schemas.responder import ResponderCreate, ResponderOut
 
 router = APIRouter(
     prefix="/register",

@@ -6,11 +6,11 @@ from .database import get_db, engine, Base
 from .config.settings import settings
 from sqlalchemy import text
 
-from .endpoints.register import router as register_router
-from .endpoints.login_auth import router as login_router
-from .endpoints.user_info import router as user_router
-from .endpoints.profile_upload import router as profile_upload_router
-from .endpoints.profile_update import router as profile_update_router
+from .endpoints.mobile.register import router as register_router
+from .endpoints.mobile.login_auth import router as login_router
+from .endpoints.mobile.user_info import router as user_router
+from .endpoints.mobile.profile_upload import router as profile_upload_router
+from .endpoints.mobile.profile_update import router as profile_update_router
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login") 
 

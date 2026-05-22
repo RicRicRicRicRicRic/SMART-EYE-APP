@@ -1,11 +1,12 @@
+#app/endpoints/mobile/profile_upload.py
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from sqlalchemy.orm import Session
 import uuid
 
-from ..database import get_db
-from ..models.emergency_responder import EmergencyResponder
-from ..endpoints.user_info import get_current_user
-from ..config.supabase import supabase_client
+from ...database import get_db
+from ...models.emergency_responder import EmergencyResponder
+from .user_info import get_current_user
+from ...config.supabase import supabase_client
 
 router = APIRouter(prefix="/me", tags=["Profile"])
 

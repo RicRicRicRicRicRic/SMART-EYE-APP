@@ -1,12 +1,12 @@
-#app/endpoints/user_info.py
+#app/endpoints/mobile/user_info.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import logging
 
-from ..database import get_db
-from ..models.emergency_responder import EmergencyResponder
-from ..schemas.responder import ResponderOut   # Make sure this is imported
-from ..utils.security import verify_token
+from ...database import get_db
+from ...models.emergency_responder import EmergencyResponder
+from ...schemas.responder import ResponderOut   # Make sure this is imported
+from ...utils.security import verify_token
 from fastapi.security import OAuth2PasswordBearer
 
 router = APIRouter(
