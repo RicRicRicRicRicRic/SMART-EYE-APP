@@ -19,10 +19,11 @@ class ResponderOut(BaseModel):
     full_name: str
     email: EmailStr
     contact_number: Optional[str] = None
+    profile_picture_url: Optional[str] = None
+    responder_role: str                     
     approval_status: str
     is_active: str
     created_at: datetime
-    profile_picture_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

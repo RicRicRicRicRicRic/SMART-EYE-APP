@@ -16,6 +16,12 @@ class ActiveStatus(str, enum.Enum):
     SUSPENDED = "suspended"
 
 
+class ResponderRole(str, enum.Enum):
+    SUPER_ADMIN = "super_admin"
+    ADMIN = "admin"
+    RESPONDER = "responder"
+
+
 class EmergencyResponder(Base):
     __tablename__ = "Emergency_Responders"
 
@@ -27,20 +33,21 @@ class EmergencyResponder(Base):
     fcm_token = Column(String(255), nullable=True)
     profile_picture_url = Column(String(500), nullable=True)
     
+    # NEW COLUMN
+    responder_role = Column(
+        SQLEnum(ResponderRole),
+        nullable=False,
+        default=ResponderRole.RESPONDER
+    )
+    
     approval_status = Column(
-        SQLEnum(
-            ApprovalStatus,
-            values_callable=lambda x: [e.value for e in x],  
-        ),
+        SQLEnum(ApprovalStatus, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=ApprovalStatus.PENDING
     )
     
     is_active = Column(
-        SQLEnum(
-            ActiveStatus,
-            values_callable=lambda x: [e.value for e in x],  # forces "active" etc.
-        ),
+        SQLEnum(ActiveStatus, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=ActiveStatus.ACTIVE
     )

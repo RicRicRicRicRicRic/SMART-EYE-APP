@@ -1,11 +1,11 @@
-#app/endpoints/mobile/register.py
+# app/endpoints/mobile/register.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import logging
 
 from ...database import get_db
-from ...models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
+from ...models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus, ResponderRole
 from ...schemas.responder import ResponderCreate, ResponderOut
 
 router = APIRouter(
@@ -28,7 +28,6 @@ async def register_responder(
     db: Session = Depends(get_db)
 ):
     try:
-
         responder_id = responder.responder_id.strip()
         full_name = responder.full_name.strip()
         email = responder.email.strip().lower()
@@ -56,6 +55,7 @@ async def register_responder(
             hashed_password=hashed_password,
             approval_status=ApprovalStatus.PENDING,
             is_active=ActiveStatus.ACTIVE,
+            responder_role=ResponderRole.RESPONDER,   # Default role
             fcm_token=None
         )
 
