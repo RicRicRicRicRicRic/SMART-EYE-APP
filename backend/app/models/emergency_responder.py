@@ -33,7 +33,6 @@ class EmergencyResponder(Base):
     fcm_token = Column(String(255), nullable=True)
     profile_picture_url = Column(String(500), nullable=True)
     
-    # NEW COLUMN
     responder_role = Column(
         SQLEnum(ResponderRole),
         nullable=False,

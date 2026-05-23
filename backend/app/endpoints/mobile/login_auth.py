@@ -6,7 +6,7 @@ import logging
 
 from ...database import get_db
 from ...models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus
-from ...schemas.responder import LoginRequest, LoginResponse
+from ...schemas.mobile.responder import LoginRequest, LoginResponse
 from ...utils.security import create_access_token   # ← NEW
 
 router = APIRouter(

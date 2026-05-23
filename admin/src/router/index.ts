@@ -3,6 +3,7 @@
  */
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 // Layout
 import AdminLayout from '@/components/layout/AdminLayout.vue'
@@ -60,7 +61,7 @@ const routes: Array<RouteRecordRaw> = [
       }
     ]
   },
-  // Catch-all
+  // Catch-all route
   {
     path: '/:pathMatch(.*)*',
     redirect: '/dashboard'
@@ -72,15 +73,24 @@ const router = createRouter({
   routes
 })
 
-// Navigation Guard
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('adminToken')
+// Navigation Guard using Pinia Auth Store
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+
+  // Wait for auth check if needed
+  if (!authStore.isAuthenticated && authStore.token) {
+    await authStore.checkAuth()
+  }
+
+  const isAuthenticated = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
-  } else if (to.path === '/login' && isAuthenticated) {
+  } 
+  else if (to.path === '/login' && isAuthenticated) {
     next('/dashboard')
-  } else {
+  } 
+  else {
     next()
   }
 })

@@ -1,29 +1,52 @@
 <!-- src/components/layout/AdminLayout.vue -->
 <template>
   <div class="admin-layout">
+    <!-- Top Navbar (Sticky) -->
     <nav class="navbar">
       <div class="navbar-left">
-        <h2>SMART-EYE Admin</h2>
+        <div class="logo">
+          <span class="logo-icon">👁️</span>
+          <span class="logo-text">SMART-EYE</span>
+        </div>
+        <h2 class="page-title">{{ currentPageTitle }}</h2>
       </div>
+      
       <div class="navbar-right">
-        <span>Welcome, Admin</span>
-        <button @click="logout" class="logout-btn">Logout</button>
+        <div class="user-info">
+          <span class="username">Admin</span>
+        </div>
+        <button @click="logout" class="logout-btn">
+          Logout
+        </button>
       </div>
     </nav>
 
     <div class="main-container">
+      <!-- Fixed Sidebar -->
       <aside class="sidebar">
-        <router-link to="/dashboard" class="nav-item">
-          📊 Dashboard
-        </router-link>
-        <router-link to="/responders" class="nav-item">
-          👥 Responders
-        </router-link>
-        <router-link to="/password-reset" class="nav-item">
-          🔑 Password Reset
-        </router-link>
+        <div class="sidebar-header">
+          <h3>Admin Panel</h3>
+        </div>
+        
+        <nav class="sidebar-nav">
+          <router-link to="/dashboard" class="nav-item">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+          </router-link>
+          
+          <router-link to="/responders" class="nav-item">
+            <span class="nav-icon">👥</span>
+            <span>Responders</span>
+          </router-link>
+          
+          <router-link to="/password-reset" class="nav-item">
+            <span class="nav-icon">🔑</span>
+            <span>Password Reset</span>
+          </router-link>
+        </nav>
       </aside>
 
+      <!-- Scrollable Content -->
       <main class="content">
         <router-view />
       </main>
@@ -32,20 +55,33 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
+
+const currentPageTitle = computed(() => {
+  switch (route.path) {
+    case '/dashboard': return 'Dashboard'
+    case '/responders': return 'Responders Management'
+    case '/password-reset': return 'Password Reset Requests'
+    default: return 'Admin Panel'
+  }
+})
 
 const logout = () => {
-  localStorage.removeItem('adminToken')
-  router.push('/login')
+  if (confirm('Are you sure you want to logout?')) {
+    localStorage.removeItem('adminToken')
+    router.push('/login')
+  }
 }
 </script>
 
 <style scoped>
 .admin-layout {
   min-height: 100vh;
-  background: #f4f6f9;
+  background: #f8fafc;
 }
 
 .navbar {
@@ -55,53 +91,99 @@ const logout = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.navbar-left h2 {
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.logo-text {
+  color: #60a5fa;
+}
+
+.page-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #e2e8f0;
 }
 
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .logout-btn {
   background: #ef4444;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-radius: 6px;
   cursor: pointer;
 }
 
 .main-container {
   display: flex;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 73px);
 }
 
 .sidebar {
-  width: 260px;
+  width: 280px;
   background: white;
-  padding: 2rem 1rem;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem 1rem;
+  position: fixed;           /* ← Fixed Sidebar */
+  top: 73px;                 /* Matches navbar height */
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 90;
+}
+
+.sidebar-header {
+  padding: 0 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-item {
-  display: block;
-  padding: 12px 16px;
-  margin: 6px 0;
-  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  color: #475569;
   text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: 10px;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
-.nav-item:hover,
+.nav-item:hover {
+  background: #f1f5f9;
+  color: #1e40af;
+}
+
 .nav-item.router-link-active {
   background: #3b82f6;
   color: white;
@@ -110,6 +192,8 @@ const logout = () => {
 .content {
   flex: 1;
   padding: 2rem;
-  overflow-y: auto;
+  margin-left: 280px;        /* ← Space for fixed sidebar */
+  background: #f8fafc;
+  min-height: calc(100vh - 73px);
 }
 </style>

@@ -6,7 +6,7 @@ import logging
 
 from ...database import get_db
 from ...models.emergency_responder import EmergencyResponder, ApprovalStatus, ActiveStatus, ResponderRole
-from ...schemas.responder import ResponderCreate, ResponderOut
+from ...schemas.mobile.responder import ResponderCreate, ResponderOut
 
 router = APIRouter(
     prefix="/register",

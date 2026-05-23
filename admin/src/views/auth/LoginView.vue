@@ -2,22 +2,21 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <!-- Logo / Header -->
       <div class="login-header">
         <h1>SMART-EYE</h1>
         <p>Admin Dashboard</p>
       </div>
 
-      <!-- Login Form -->
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
-          <label for="username">Username or Email</label>
+          <label for="username">Email</label>
           <input
             v-model="username"
-            type="text"
+            type="email"
             id="username"
             placeholder="Enter your username or email"
             required
+            :disabled="loading"
           />
         </div>
 
@@ -29,12 +28,15 @@
             id="password"
             placeholder="Enter your password"
             required
+            :disabled="loading"
           />
         </div>
 
         <button type="submit" class="login-btn" :disabled="loading">
           {{ loading ? 'Logging in...' : 'Login' }}
         </button>
+
+        <p v-if="error" class="error-message">{{ error }}</p>
       </form>
 
       <div class="login-footer">
@@ -46,29 +48,26 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const router = useRouter()
+const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
+const error = ref('')
 
 const handleLogin = async () => {
   loading.value = true
+  error.value = ''
 
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 800))
-
-  // TODO: Replace this with real API call to your Flask backend later
-  if (username.value && password.value) {
-    localStorage.setItem('adminToken', 'fake-jwt-token')
-    router.push('/dashboard')
-  } else {
-    alert('Please enter username and password')
+  try {
+    await authStore.login(username.value, password.value)
+  } catch (err: any) {
+    error.value = err.message || 'Invalid username or password'
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 </script>
 
@@ -145,13 +144,19 @@ input:focus {
   transition: background 0.3s;
 }
 
-.login-btn:hover {
+.login-btn:hover:not(:disabled) {
   background: #2563eb;
 }
 
 .login-btn:disabled {
   background: #93c5fd;
   cursor: not-allowed;
+}
+
+.error-message {
+  color: #ef4444;
+  margin-top: 1rem;
+  font-weight: 500;
 }
 
 .login-footer {
