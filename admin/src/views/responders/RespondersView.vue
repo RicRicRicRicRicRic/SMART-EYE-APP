@@ -10,13 +10,13 @@
           placeholder="Search responders..."
           class="search-input"
         />
-        <button class="refresh-btn" @click="fetchResponders">
+        <button class="refresh-btn" @click="fetchResponders" :disabled="loading">
           ↻ Refresh
         </button>
       </div>
     </div>
 
-    <!-- Stats Row -->
+    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
         <h3>Total</h3>
@@ -32,7 +32,7 @@
       </div>
     </div>
 
-    <!-- Responders Table -->
+    <!-- Table -->
     <div class="table-container">
       <table class="responders-table">
         <thead>
@@ -46,34 +46,34 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="responder in filteredResponders" :key="responder.id">
-            <td>{{ responder.name }}</td>
+          <tr v-for="responder in filteredResponders" :key="responder.responder_id">
+            <td>{{ responder.full_name }}</td>
             <td>{{ responder.email }}</td>
-            <td>{{ responder.phone || 'N/A' }}</td>
+            <td>{{ responder.contact_number || 'N/A' }}</td>
             <td>
-              <StatusBadge :status="responder.status" />
+              <StatusBadge :status="responder.approval_status.toLowerCase()" />
             </td>
-            <td>{{ responder.registeredDate }}</td>
+            <td>{{ new Date(responder.created_at).toLocaleDateString() }}</td>
             <td>
-              <div class="action-buttons">
-                <button 
-                  v-if="responder.status === 'pending'"
-                  class="approve-btn"
-                  @click="updateStatus(responder.id, 'approved')">
+              <!-- Show "Your Account" if it's the logged-in user -->
+              <span v-if="isCurrentUser(responder)" class="your-account">
+                Your Account
+              </span>
+              <!-- Otherwise show action buttons -->
+              <div v-else class="action-buttons">
+                <button v-if="responder.approval_status === 'Pending'" 
+                        class="approve-btn"
+                        @click="updateStatus(responder.responder_id, { approval_status: 'Approved' })">
                   Approve
                 </button>
-                
-                <button 
-                  v-if="responder.status === 'pending' || responder.status === 'approved'"
-                  class="reject-btn"
-                  @click="updateStatus(responder.id, 'rejected')">
+                <button v-if="responder.approval_status === 'Pending' || responder.approval_status === 'Approved'" 
+                        class="reject-btn"
+                        @click="updateStatus(responder.responder_id, { approval_status: 'Rejected' })">
                   Reject
                 </button>
-
-                <button 
-                  v-if="responder.status === 'approved'"
-                  class="suspend-btn"
-                  @click="updateStatus(responder.id, 'suspended')">
+                <button v-if="responder.approval_status === 'Approved'" 
+                        class="suspend-btn"
+                        @click="updateStatus(responder.responder_id, { is_active: 'suspended' })">
                   Suspend
                 </button>
               </div>
@@ -87,71 +87,66 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { responderService, type Responder } from '@/services/responderService'
+import { useAuthStore } from '@/stores/auth'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 
-// Sample Data (Replace with API call later)
-const responders = ref([
-  {
-    id: 1,
-    name: "Juan Dela Cruz",
-    email: "juan.delacruz@email.com",
-    phone: "09123456789",
-    status: "pending",
-    registeredDate: "2025-05-20"
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    email: "maria.santos@email.com",
-    phone: "09234567890",
-    status: "approved",
-    registeredDate: "2025-05-19"
-  },
-  {
-    id: 3,
-    name: "Robert Lim",
-    email: "robert.lim@email.com",
-    phone: "09345678901",
-    status: "pending",
-    registeredDate: "2025-05-22"
-  }
-])
+const authStore = useAuthStore()
 
+const responders = ref<Responder[]>([])
+const loading = ref(false)
 const searchQuery = ref('')
 
+const fetchResponders = async () => {
+  loading.value = true
+  try {
+    const data = await responderService.getAll()
+    responders.value = Array.isArray(data) ? data : data.responders || []
+  } catch (error) {
+    console.error('Failed to fetch responders:', error)
+    alert('Failed to load responders')
+  } finally {
+    loading.value = false
+  }
+}
+
+const isCurrentUser = (responder: Responder) => {
+  return responder.responder_id === authStore.admin?.responder_id
+}
+
+const updateStatus = async (responderId: string, data: any) => {
+  if (!confirm('Are you sure you want to update this responder?')) return
+
+  try {
+    await responderService.updateStatus(responderId, data)
+    await fetchResponders()
+    alert('Status updated successfully')
+  } catch (error) {
+    alert('Failed to update status')
+  }
+}
+
 const filteredResponders = computed(() => {
-  return responders.value.filter(r => 
-    r.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+  return responders.value.filter(r =>
+    r.full_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     r.email.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
 const totalResponders = computed(() => responders.value.length)
-const pendingCount = computed(() => responders.value.filter(r => r.status === 'pending').length)
-const approvedCount = computed(() => responders.value.filter(r => r.status === 'approved').length)
+const pendingCount = computed(() => responders.value.filter(r => r.approval_status === 'Pending').length)
+const approvedCount = computed(() => responders.value.filter(r => r.approval_status === 'Approved').length)
 
-const updateStatus = (id: number, newStatus: string) => {
-  const responder = responders.value.find(r => r.id === id)
-  if (responder) {
-    if (confirm(`Mark this responder as ${newStatus.toUpperCase()}?`)) {
-      responder.status = newStatus
-      // TODO: Call API to update in backend
-      alert(`Responder status updated to ${newStatus}`)
-    }
-  }
-}
-
-const fetchResponders = () => {
-  // TODO: Replace with real API call to Flask
-  console.log('Fetching latest responders...')
-}
-
-onMounted(() => {
-  fetchResponders()
-})
+onMounted(fetchResponders)
 </script>
 
 <style scoped>
+.your-account {
+  color: #3b82f6;
+  font-weight: 600;
+  font-style: italic;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;

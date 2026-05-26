@@ -1,7 +1,7 @@
 <!-- src/components/layout/AdminLayout.vue -->
 <template>
   <div class="admin-layout">
-    <!-- Top Navbar (Sticky) -->
+    <!-- Top Navbar -->
     <nav class="navbar">
       <div class="navbar-left">
         <div class="logo">
@@ -13,7 +13,9 @@
       
       <div class="navbar-right">
         <div class="user-info">
-          <span class="username">Admin</span>
+          <span class="username">
+            Welcome! {{ userFullName }}
+          </span>
         </div>
         <button @click="logout" class="logout-btn">
           Logout
@@ -22,7 +24,6 @@
     </nav>
 
     <div class="main-container">
-      <!-- Fixed Sidebar -->
       <aside class="sidebar">
         <div class="sidebar-header">
           <h3>Admin Panel</h3>
@@ -46,7 +47,6 @@
         </nav>
       </aside>
 
-      <!-- Scrollable Content -->
       <main class="content">
         <router-view />
       </main>
@@ -57,9 +57,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+
+const userFullName = computed(() => {
+  return authStore.admin?.full_name || 'Admin'
+})
 
 const currentPageTitle = computed(() => {
   switch (route.path) {
@@ -72,8 +78,7 @@ const currentPageTitle = computed(() => {
 
 const logout = () => {
   if (confirm('Are you sure you want to logout?')) {
-    localStorage.removeItem('adminToken')
-    router.push('/login')
+    authStore.logout()
   }
 }
 </script>
@@ -148,8 +153,8 @@ const logout = () => {
   border-right: 1px solid #e2e8f0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
   padding: 1.5rem 1rem;
-  position: fixed;           /* ← Fixed Sidebar */
-  top: 73px;                 /* Matches navbar height */
+  position: fixed;           
+  top: 73px;                 
   bottom: 0;
   overflow-y: auto;
   z-index: 90;
@@ -192,7 +197,7 @@ const logout = () => {
 .content {
   flex: 1;
   padding: 2rem;
-  margin-left: 280px;        /* ← Space for fixed sidebar */
+  margin-left: 280px;       
   background: #f8fafc;
   min-height: calc(100vh - 73px);
 }

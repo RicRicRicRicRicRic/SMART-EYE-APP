@@ -1,4 +1,3 @@
-<!-- src/views/auth/LoginView.vue -->
 <template>
   <div class="login-container">
     <div class="login-card">
@@ -64,7 +63,14 @@ const handleLogin = async () => {
   try {
     await authStore.login(username.value, password.value)
   } catch (err: any) {
-    error.value = err.message || 'Invalid username or password'
+    if (err.response?.data?.detail) {
+      const detail = err.response.data.detail
+      error.value = typeof detail === 'object' ? (detail[0]?.msg || JSON.stringify(detail)) : detail
+    } else if (err.message) {
+      error.value = typeof err.message === 'object' ? JSON.stringify(err.message) : err.message
+    } else {
+      error.value = 'Invalid username or password'
+    }
   } finally {
     loading.value = false
   }

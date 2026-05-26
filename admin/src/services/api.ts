@@ -19,13 +19,14 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error.response?.data || error.message)
-    if (error.response?.status === 401) {
+    
+    if (error.response?.status === 401 && !error.config.url?.includes('/admin/login')) {
       localStorage.removeItem('adminToken')
+      localStorage.removeItem('adminUser')
       window.location.href = '/login'
     }
     return Promise.reject(error)

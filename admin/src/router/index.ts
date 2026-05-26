@@ -15,10 +15,7 @@ import RespondersView from '@/views/responders/RespondersView.vue'
 import PasswordResetRequest from '@/views/password-reset/PasswordResetRequest.vue'
 
 const routes: Array<RouteRecordRaw> = [
-  {
-    path: '/',
-    redirect: '/login'
-  },
+  { path: '/', redirect: '/login' },
   {
     path: '/login',
     name: 'Login',
@@ -29,43 +26,21 @@ const routes: Array<RouteRecordRaw> = [
     path: '/dashboard',
     component: AdminLayout,
     meta: { requiresAuth: true },
-    children: [
-      {
-        path: '',
-        name: 'Dashboard',
-        component: DashboardView
-      }
-    ]
+    children: [{ path: '', name: 'Dashboard', component: DashboardView }]
   },
   {
     path: '/responders',
     component: AdminLayout,
     meta: { requiresAuth: true },
-    children: [
-      {
-        path: '',
-        name: 'Responders',
-        component: RespondersView
-      }
-    ]
+    children: [{ path: '', name: 'Responders', component: RespondersView }]
   },
   {
     path: '/password-reset',
     component: AdminLayout,
     meta: { requiresAuth: true },
-    children: [
-      {
-        path: '',
-        name: 'PasswordReset',
-        component: PasswordResetRequest
-      }
-    ]
+    children: [{ path: '', name: 'PasswordReset', component: PasswordResetRequest }]
   },
-  // Catch-all route
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/dashboard'
-  }
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 
 const router = createRouter({
@@ -73,13 +48,11 @@ const router = createRouter({
   routes
 })
 
-// Navigation Guard using Pinia Auth Store
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Wait for auth check if needed
-  if (!authStore.isAuthenticated && authStore.token) {
-    await authStore.checkAuth()
+  if (authStore.token && !authStore.isAuthenticated) {
+    await authStore.restoreAuth()
   }
 
   const isAuthenticated = authStore.isAuthenticated
@@ -87,6 +60,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
   } 
+
   else if (to.path === '/login' && isAuthenticated) {
     next('/dashboard')
   } 

@@ -14,6 +14,8 @@ from .endpoints.mobile.profile_upload import router as profile_upload_router
 from .endpoints.mobile.profile_update import router as profile_update_router
 
 from .endpoints.admin.admin_auth import router as admin_auth_router
+from .endpoints.admin.admin_responders import router as admin_responders_router
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login") 
 
@@ -38,6 +40,8 @@ app.include_router(profile_upload_router)
 app.include_router(profile_update_router)
 
 app.include_router(admin_auth_router)
+app.include_router(admin_responders_router)
+
 
 @app.get("/")
 def read_root():
