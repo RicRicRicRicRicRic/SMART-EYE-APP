@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert'; // For jsonEncode and jsonDecode
-import 'package:http/http.dart' as http; // For API calls
-import 'package:shared_preferences/shared_preferences.dart'; // Required for token storage
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/custom_scaffold.dart';
 import '../theme/theme.dart';
 import '../constants/api_constants.dart';
@@ -15,9 +15,8 @@ class SignInPage extends StatelessWidget {
 
   SignInPage({super.key});
 
-  // Enhanced login logic with debugging and token storage
+  // Login logic
   Future<void> _login(BuildContext context) async {
-    // Basic validation
     if (emailController.text.trim().isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter email and password')),
@@ -39,44 +38,112 @@ class SignInPage extends StatelessWidget {
         }),
       );
 
-      print("DEBUG LOGIN: Status = ${response.statusCode}");
+      print('Status Code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final String token = responseData['access_token'];
+
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', token);
+
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()), // Fixed name
+          );
+        }
+      } else {
+        final Map<String, dynamic> errorData = jsonDecode(response.body);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorData['detail'] ?? 'Login failed')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Login Error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Connection error. Please try again.')),
+        );
+      }
+    }
+  }
+
+  // Forgot Password Dialog
+  Future<void> _showForgotPasswordDialog(BuildContext context) async {
+    final dialogEmailController = TextEditingController(text: emailController.text);
+
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Password Reset'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Would you like to send a password reset request to the admin?'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: dialogEmailController,
+              decoration: const InputDecoration(
+                labelText: 'Your Email',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes, Send Request'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && dialogEmailController.text.trim().isNotEmpty) {
+      await _sendPasswordResetRequest(context, dialogEmailController.text.trim());
+    }
+  }
+
+  Future<void> _sendPasswordResetRequest(BuildContext context, String email) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sending request...')),
+    );
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/password-reset/request'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        final prefs = await SharedPreferences.getInstance();
-        final token = data['access_token'];
-
-        print("DEBUG LOGIN: Token received = ${token != null}");
-
-        if (token != null) {
-          await prefs.setString('access_token', token);
-        }
-
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
+          SnackBar(
+            content: Text(data['message'] ?? 'Request sent successfully!'),
             backgroundColor: Colors.green,
           ),
         );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
       } else {
-        final msg = data['detail'] ?? 'Login failed';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(data['detail'] ?? 'Failed to send request'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
-      print("DEBUG LOGIN ERROR: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot connect to server. Is backend running?'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Cannot connect to server'), backgroundColor: Colors.red),
       );
     }
   }
@@ -121,9 +188,7 @@ class SignInPage extends StatelessWidget {
                         labelStyle: const TextStyle(color: Colors.black54),
                         filled: true,
                         fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -136,20 +201,16 @@ class SignInPage extends StatelessWidget {
                         labelStyle: const TextStyle(color: Colors.black54),
                         filled: true,
                         fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                     ),
                     const SizedBox(height: 35),
                     ElevatedButton(
-                      onPressed: () => _login(context), // Calling the enhanced function
+                      onPressed: () => _login(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SmartEyeTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 80),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       child: const Text('Login', style: TextStyle(color: Colors.white)),
                     ),
@@ -161,10 +222,11 @@ class SignInPage extends StatelessWidget {
                           MaterialPageRoute(builder: (context) => SignUpPage()),
                         );
                       },
-                      child: const Text(
-                        'Create an account',
-                        style: TextStyle(color: Colors.black54),
-                      ),
+                      child: const Text('Create an account', style: TextStyle(color: Colors.black54)),
+                    ),
+                    TextButton(
+                      onPressed: () => _showForgotPasswordDialog(context),
+                      child: const Text('Forgot password?', style: TextStyle(color: Colors.black54)),
                     ),
                   ],
                 ),

@@ -7,11 +7,15 @@ from .database import get_db, engine, Base
 from .config.settings import settings
 from sqlalchemy import text
 
+from .models.emergency_responder import EmergencyResponder
+from .models.password_reset import PasswordResetRequest   
+
 from .endpoints.mobile.register import router as register_router
 from .endpoints.mobile.login_auth import router as login_router
 from .endpoints.mobile.user_info import router as user_router
 from .endpoints.mobile.profile_upload import router as profile_upload_router
 from .endpoints.mobile.profile_update import router as profile_update_router
+from .endpoints.mobile.reset_password_request import router as reset_password_request_router
 
 from .endpoints.admin.admin_auth import router as admin_auth_router
 from .endpoints.admin.admin_responders import router as admin_responders_router
@@ -38,6 +42,7 @@ app.include_router(login_router)
 app.include_router(user_router)
 app.include_router(profile_upload_router)
 app.include_router(profile_update_router)
+app.include_router(reset_password_request_router)
 
 app.include_router(admin_auth_router)
 app.include_router(admin_responders_router)
@@ -51,7 +56,6 @@ def read_root():
         "test_db": "Check /test-db to verify database connection"
     }
 
-Base.metadata.create_all(bind=engine)
 
 @app.get("/test-db")
 def test_database(db: Session = Depends(get_db)):
@@ -64,3 +68,5 @@ def test_database(db: Session = Depends(get_db)):
         }
     except Exception as e:
         return {"status": "Connection failed", "error": str(e)}
+
+Base.metadata.create_all(bind=engine)
