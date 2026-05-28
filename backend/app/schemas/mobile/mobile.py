@@ -1,4 +1,4 @@
-# app/schemas/mobile/responder.py
+# app/schemas/mobile/mobile.py
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime
 from typing import Optional

@@ -16,10 +16,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic>? userData;
   bool isLoading = true, isEditing = false, isSaving = false;
+  bool _obscurePassword = true;
 
   final ImagePicker _picker = ImagePicker();
   late TextEditingController _nameController = TextEditingController();
   late TextEditingController _contactController = TextEditingController();
+  late TextEditingController _emailController = TextEditingController();
+  late TextEditingController _passwordController = TextEditingController();
 
   @override
   void initState() {
@@ -31,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _nameController.dispose();
     _contactController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -52,6 +57,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           userData = jsonDecode(response.body);
           _nameController.text = userData?['full_name'] ?? '';
           _contactController.text = userData?['contact_number'] ?? '';
+          _emailController.text = userData?['email'] ?? '';
+          _passwordController.text = '';
           isLoading = false;
         });
       } else {
@@ -67,13 +74,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => isSaving = true);
     final token = await _getToken();
 
+    // Prevent passing validation breaking empty strings into the payload body
+    final String? fullNameParam = _nameController.text.trim().isEmpty ? null : _nameController.text.trim();
+    final String? contactParam = _contactController.text.trim().isEmpty ? null : _contactController.text.trim();
+    final String? emailParam = _emailController.text.trim().isEmpty ? null : _emailController.text.trim();
+    final String? passwordParam = _passwordController.text.trim().isEmpty ? null : _passwordController.text.trim();
+
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/me'),
+        Uri.parse('$baseUrl/me/'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
         body: jsonEncode({
-          'full_name': _nameController.text.trim(),
-          'contact_number': _contactController.text.trim().isEmpty ? null : _contactController.text.trim(),
+          'full_name': fullNameParam,
+          'contact_number': contactParam,
+          'email': emailParam,
+          'password': passwordParam,
         }),
       );
 
@@ -82,7 +97,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() => isEditing = false);
         await _fetchUserInfo();
       } else {
-        _showSnack('Failed to update profile', Colors.red);
+        final errorData = jsonDecode(response.body);
+        _showSnack(errorData['detail']?.toString() ?? 'Failed to update profile', Colors.red);
       }
     } catch (_) {
       _showSnack('Connection error', Colors.red);
@@ -123,6 +139,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!isEditing) {
         _nameController.text = userData?['full_name'] ?? '';
         _contactController.text = userData?['contact_number'] ?? '';
+        _emailController.text = userData?['email'] ?? '';
+        _passwordController.text = '';
       }
     });
   }
@@ -149,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   children: [
                     GestureDetector(
@@ -158,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         alignment: Alignment.bottomRight,
                         children: [
                           CircleAvatar(
-                            radius: 55,
+                            radius: 45,
                             backgroundImage: userData?['profile_picture_url'] != null
                                 ? NetworkImage(userData!['profile_picture_url'])
                                 : const AssetImage('assets/images/profile.jpg') as ImageProvider,
@@ -174,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -187,7 +205,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Divider(height: 20),
                     _buildRow('Full Name', controller: _nameController),
                     _buildRow('Contact Number', controller: _contactController),
-                    _buildRow('Email', value: userData?['email']),
+                    _buildRow('Email', controller: _emailController),
+                    _buildRow('Password', controller: _passwordController, isPassword: true),
                     _buildRow('Responder ID', value: userData?['responder_id']?.toString()),
                     _buildRow('Role', value: userData?['responder_role']),
                     _buildRow('Approval Status', value: userData?['approval_status']),
@@ -214,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildRow(String label, {TextEditingController? controller, String? value}) {
+  Widget _buildRow(String label, {TextEditingController? controller, String? value, bool isPassword = false}) {
     final useTextField = controller != null && isEditing;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
@@ -225,15 +244,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: useTextField
                 ? TextField(
               controller: controller,
+              obscureText: isPassword && _obscurePassword,
               decoration: InputDecoration(
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12.0),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                 hintText: 'Enter $label',
+                suffixIcon: isPassword
+                    ? IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 20),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                )
+                    : null,
+                suffixIconConstraints: isPassword
+                    ? const BoxConstraints(minWidth: 36, minHeight: 20)
+                    : null,
               ),
-              keyboardType: label.contains('Number') ? TextInputType.phone : TextInputType.text,
+              keyboardType: isPassword
+                  ? TextInputType.visiblePassword
+                  : (label.contains('Number') ? TextInputType.phone : TextInputType.text),
             )
-                : Text(controller != null ? (controller.text.isNotEmpty ? controller.text : 'Not provided') : (value ?? 'N/A'), style: const TextStyle(fontSize: 16)),
+                : Text(
+              isPassword
+                  ? '••••••••••'
+                  : (controller != null ? (controller.text.isNotEmpty ? controller.text : 'Not provided') : (value ?? 'N/A')),
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
         ],
       ),

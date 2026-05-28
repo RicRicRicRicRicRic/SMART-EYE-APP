@@ -34,3 +34,9 @@ export const responderService = {
   }
 }
 
+export const passwordResetService = {
+  async resetPassword(email: string) {
+    const response = await api.post('/admin/password-reset', { email })
+    return response.data
+  }
+}

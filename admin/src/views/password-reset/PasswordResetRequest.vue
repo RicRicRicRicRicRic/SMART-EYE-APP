@@ -6,7 +6,6 @@
       <p class="subtitle">Manage and process password reset requests from responders</p>
     </div>
 
-    <!-- Stats -->
     <div class="stats-row">
       <div class="stat-box">
         <h3>Total Requests</h3>
@@ -18,42 +17,43 @@
       </div>
     </div>
 
-    <!-- Table -->
     <div class="table-container">
       <table class="reset-table">
         <thead>
           <tr>
             <th>Responder Name</th>
             <th>Email</th>
+            <th>Phone</th>
             <th>Request Date</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="request in filteredRequests" :key="request.id">
-            <td>{{ request.name }}</td>
-            <td>{{ request.email }}</td>
-            <td>{{ request.requestDate }}</td>
+          <tr v-for="req in filteredRequests" :key="req.request_id">
+            <td>{{ req.full_name }}</td>
+            <td>{{ req.email }}</td>
+            <td>{{ req.contact_number || 'N/A' }}</td>
+            <td>{{ new Date(req.request_date).toLocaleString() }}</td>
             <td>
-              <StatusBadge :status="request.status" />
+              <StatusBadge :status="req.status" />
             </td>
             <td>
-              <div class="action-group">
+              <div class="action-group" v-if="req.status === 'pending'">
                 <button 
-                  v-if="request.status === 'pending'"
                   class="reset-btn"
-                  @click="resetPassword(request)">
-                  Reset Password
+                  @click="resetPassword(req)"
+                  :disabled="loadingIds.includes(req.request_id)">
+                  {{ loadingIds.includes(req.request_id) ? 'Sending...' : 'Reset & Send Email' }}
                 </button>
                 
                 <button 
-                  v-if="request.status === 'pending'"
                   class="dismiss-btn"
-                  @click="dismissRequest(request.id)">
+                  @click="dismissRequest(req.request_id)">
                   Dismiss
                 </button>
               </div>
+              <span v-else class="no-actions">No actions available</span>
             </td>
           </tr>
         </tbody>
@@ -63,68 +63,76 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import api from '@/services/api'
 
-// Sample Data
-const resetRequests = ref([
-  {
-    id: 1,
-    name: "Juan Dela Cruz",
-    email: "juan.delacruz@email.com",
-    requestDate: "2025-05-22 14:30",
-    status: "pending"
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    email: "maria.santos@email.com",
-    requestDate: "2025-05-22 11:15",
-    status: "pending"
-  },
-  {
-    id: 3,
-    name: "Robert Lim",
-    email: "robert.lim@email.com",
-    requestDate: "2025-05-21 09:45",
-    status: "completed"
-  }
-])
-
+const resetRequests = ref<any[]>([])
 const searchQuery = ref('')
+const loadingIds = ref<string[]>([])
 
-const filteredRequests = computed(() => {
-  return resetRequests.value.filter(req =>
-    req.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    req.email.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+const fetchResetRequests = async () => {
+  try {
+    const response = await api.get('/admin/password-reset/requests')
+    resetRequests.value = response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const resetPassword = async (req: any) => {
+  if (!confirm(`Reset password for ${req.full_name} and send via email?`)) return
+
+  loadingIds.value.push(req.request_id)
+
+  try {
+    const result = await api.post('/admin/password-reset', { 
+      email: req.email 
+    })
+
+    alert(`✅ Password reset successful!\n\n` +
+          `Name: ${req.full_name}\n` +
+          `Email: ${req.email}\n` +
+          `New Password: ${result.data.new_password}\n\n` +
+          `Password has been sent to their email.`)
+
+    await fetchResetRequests()
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'Failed to reset password')
+  } finally {
+    loadingIds.value = loadingIds.value.filter(id => id !== req.request_id)
+  }
+}
+
+const dismissRequest = async (request_id: string) => {
+  if (!confirm('Dismiss this request?')) return
+
+  try {
+    await api.patch(`/admin/password-reset/${request_id}/dismiss`)
+    await fetchResetRequests()
+  } catch (error) {
+    alert('Failed to dismiss request')
+  }
+}
+
+const filteredRequests = computed(() => resetRequests.value)
 
 const totalRequests = computed(() => resetRequests.value.length)
 const pendingRequests = computed(() => 
   resetRequests.value.filter(r => r.status === 'pending').length
 )
 
-const resetPassword = (request: any) => {
-  if (confirm(`Send new password to ${request.email}?`)) {
-    // TODO: Call Flask API to generate and send new password
-    alert(`✅ New password has been generated and sent to ${request.email}`)
-    
-    // Mark as completed
-    const req = resetRequests.value.find(r => r.id === request.id)
-    if (req) req.status = 'completed'
-  }
-}
-
-const dismissRequest = (id: number) => {
-  if (confirm('Dismiss this request?')) {
-    const index = resetRequests.value.findIndex(r => r.id === id)
-    if (index !== -1) resetRequests.value.splice(index, 1)
-  }
-}
+onMounted(fetchResetRequests)
 </script>
 
+
+
 <style scoped>
+.no-actions {
+  color: #94a3b8;
+  font-style: italic;
+}
+
 .page-header {
   margin-bottom: 2rem;
 }
