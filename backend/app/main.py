@@ -19,7 +19,9 @@ from .endpoints.mobile.reset_password_request import router as reset_password_re
 
 from .endpoints.admin.admin_auth import router as admin_auth_router
 from .endpoints.admin.admin_responders import router as admin_responders_router
-from app.endpoints.admin.admin_password_reset import router as admin_password_reset_router
+from .endpoints.admin.admin_password_reset import router as admin_password_reset_router
+from .endpoints.admin.admin_role_management import router as admin_role_management_router
+
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login") 
@@ -48,6 +50,7 @@ app.include_router(reset_password_request_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_responders_router)
 app.include_router(admin_password_reset_router)
+app.include_router(admin_role_management_router)
 
 
 @app.get("/")

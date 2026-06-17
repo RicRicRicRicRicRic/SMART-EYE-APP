@@ -74,7 +74,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => isSaving = true);
     final token = await _getToken();
 
-    // Prevent passing validation breaking empty strings into the payload body
     final String? fullNameParam = _nameController.text.trim().isEmpty ? null : _nameController.text.trim();
     final String? contactParam = _contactController.text.trim().isEmpty ? null : _contactController.text.trim();
     final String? emailParam = _emailController.text.trim().isEmpty ? null : _emailController.text.trim();
@@ -82,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/me/'),
+        Uri.parse('$baseUrl/me'),                    // ← Fixed: no trailing slash
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
         body: jsonEncode({
           'full_name': fullNameParam,
@@ -93,6 +92,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['access_token'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', data['access_token']);
+        }
+
         _showSnack('Profile updated successfully!', Colors.green);
         setState(() => isEditing = false);
         await _fetchUserInfo();

@@ -13,6 +13,7 @@ import LoginView from '@/views/auth/LoginView.vue'
 import DashboardView from '@/views/dashboard/DashboardView.vue'
 import RespondersView from '@/views/responders/RespondersView.vue'
 import PasswordResetRequest from '@/views/password-reset/PasswordResetRequest.vue'
+import RoleManagement from '@/views/roles/RoleManagement.vue'
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/login' },
@@ -39,6 +40,12 @@ const routes: Array<RouteRecordRaw> = [
     component: AdminLayout,
     meta: { requiresAuth: true },
     children: [{ path: '', name: 'PasswordReset', component: PasswordResetRequest }]
+  },
+  {
+    path: '/role-management',
+    component: AdminLayout,
+    meta: { requiresAuth: true },
+    children: [{ path: '', name: 'RoleManagement', component: RoleManagement }] 
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]

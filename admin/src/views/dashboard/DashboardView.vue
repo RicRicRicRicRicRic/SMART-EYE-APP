@@ -1,18 +1,16 @@
-<!-- src/views/dashboard/DashboardView.vue -->
 <template>
   <div>
     <div class="dashboard-header">
       <h1>Dashboard Overview</h1>
-      <p class="welcome-text">Welcome back, Admin! Here's what's happening today.</p>
+      <p class="welcome-text">Welcome back, {{ userFullName }}! Here's what's happening today.</p>
     </div>
 
-    <!-- Stats Cards -->
     <div class="stats-grid">
       <div class="stat-card total">
         <div class="stat-icon">👥</div>
         <div class="stat-info">
           <h3>Total Responders</h3>
-          <p class="stat-number">{{ totalResponders }}</p>
+          <p class="stat-number">{{ stats.total }}</p>
         </div>
       </div>
 
@@ -20,7 +18,7 @@
         <div class="stat-icon">⏳</div>
         <div class="stat-info">
           <h3>Pending Approval</h3>
-          <p class="stat-number">{{ pendingCount }}</p>
+          <p class="stat-number">{{ stats.pending }}</p>
         </div>
       </div>
 
@@ -28,34 +26,26 @@
         <div class="stat-icon">✅</div>
         <div class="stat-info">
           <h3>Approved</h3>
-          <p class="stat-number">{{ approvedCount }}</p>
-        </div>
-      </div>
-
-      <div class="stat-card active">
-        <div class="stat-icon">🟢</div>
-        <div class="stat-info">
-          <h3>Active Now</h3>
-          <p class="stat-number">{{ activeNow }}</p>
+          <p class="stat-number">{{ stats.approved }}</p>
         </div>
       </div>
     </div>
 
-    <!-- Recent Activity -->
     <div class="recent-activity">
       <h2>Recent Registrations</h2>
-      <div class="activity-list">
-        <div v-for="item in recentRegistrations" :key="item.id" class="activity-item">
+      <div class="activity-list" v-if="recentRegistrations.length > 0">
+        <div v-for="item in recentRegistrations" :key="item.responder_id" class="activity-item">
           <div class="activity-info">
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.email }}</span>
+            <strong>{{ item.full_name }}</strong>
+            <span class="email">{{ item.email }}</span>
           </div>
           <div class="activity-time">
-            {{ item.timeAgo }}
+            {{ new Date(item.created_at).toLocaleDateString() }}
           </div>
-          <StatusBadge :status="item.status" />
+          <StatusBadge :status="item.approval_status.toLowerCase()" />
         </div>
       </div>
+      <p v-else class="no-data">No recent registrations yet.</p>
     </div>
 
     <div class="quick-actions">
@@ -70,46 +60,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 
-// Sample Data - Will be replaced with real API data later
-const totalResponders = ref(48)
-const pendingCount = ref(12)
-const approvedCount = ref(34)
-const activeNow = ref(8)
+const authStore = useAuthStore()
 
-const recentRegistrations = ref([
-  {
-    id: 1,
-    name: "Carlos Mendoza",
-    email: "carlos.m@email.com",
-    status: "pending",
-    timeAgo: "2 hours ago"
-  },
-  {
-    id: 2,
-    name: "Andrea Villanueva",
-    email: "andrea.v@email.com",
-    status: "approved",
-    timeAgo: "5 hours ago"
-  },
-  {
-    id: 3,
-    name: "Miguel Santos",
-    email: "miguel.s@email.com",
-    status: "pending",
-    timeAgo: "Yesterday"
-  }
-])
-
-onMounted(() => {
-  // TODO: Fetch real data from Flask backend here
-  console.log('Dashboard data loaded')
+const stats = ref({
+  total: 0,
+  pending: 0,
+  approved: 0
 })
+
+const recentRegistrations = ref<any[]>([])
+
+const userFullName = computed(() => authStore.admin?.full_name || 'Admin')
+
+const fetchDashboardData = async () => {
+  try {
+    // Get stats
+    const statsRes = await api.get('/admin/responders/stats')
+    stats.value = statsRes.data
+
+    // Get recent responders
+    const respondersRes = await api.get('/admin/responders')
+    // Sort by created_at descending and take latest 5
+    const allResponders = respondersRes.data.responders || respondersRes.data
+    recentRegistrations.value = allResponders
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5)
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error)
+  }
+}
+
+onMounted(fetchDashboardData)
 </script>
 
+
 <style scoped>
+.email{
+ margin-left: 10px
+}
+
+.no-data {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
 .dashboard-header {
   margin-bottom: 2rem;
 }

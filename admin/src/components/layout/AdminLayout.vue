@@ -1,7 +1,6 @@
 <!-- src/components/layout/AdminLayout.vue -->
 <template>
   <div class="admin-layout">
-    <!-- Top Navbar -->
     <nav class="navbar">
       <div class="navbar-left">
         <div class="logo">
@@ -44,6 +43,11 @@
             <span class="nav-icon">🔑</span>
             <span>Password Reset</span>
           </router-link>
+
+          <router-link to="/role-management" class="nav-item">
+            <span class="nav-icon">🛡️</span>
+            <span>Role Management</span>
+          </router-link>
         </nav>
       </aside>
 
@@ -72,6 +76,7 @@ const currentPageTitle = computed(() => {
     case '/dashboard': return 'Dashboard'
     case '/responders': return 'Responders Management'
     case '/password-reset': return 'Password Reset Requests'
+    case '/role-management': return 'Role Management'
     default: return 'Admin Panel'
   }
 })
