@@ -1,71 +1,87 @@
-<!-- src/components/layout/AdminLayout.vue -->
 <template>
-  <div class="admin-layout">
-    <nav class="navbar">
-      <div class="navbar-left">
-        <div class="logo">
-          <span class="logo-icon">👁️</span>
-          <span class="logo-text">SMART-EYE</span>
-        </div>
-        <h2 class="page-title">{{ currentPageTitle }}</h2>
+  <div class="c-app">
+    <aside class="c-sidebar" :class="{ 'c-sidebar-show': sidebarShow }">
+      <div class="c-sidebar-brand">
+        <CIcon :icon="cilViewStream" class="logo-icon-svg" />
+        <span class="logo-text">SMART-EYE</span>
       </div>
       
-      <div class="navbar-right">
-        <div class="user-info">
-          <span class="username">
-            Welcome! {{ userFullName }}
-          </span>
-        </div>
-        <button @click="logout" class="logout-btn">
-          Logout
-        </button>
-      </div>
-    </nav>
-
-    <div class="main-container">
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h3>Admin Panel</h3>
-        </div>
+      <nav class="c-sidebar-nav">
+        <router-link to="/dashboard" class="c-sidebar-nav-link">
+          <CIcon :icon="cilSpeedometer" class="c-sidebar-nav-icon" /> Dashboard
+        </router-link>
         
-        <nav class="sidebar-nav">
-          <router-link to="/dashboard" class="nav-item">
-            <span class="nav-icon">📊</span>
-            <span>Dashboard</span>
-          </router-link>
-          
-          <router-link to="/responders" class="nav-item">
-            <span class="nav-icon">👥</span>
-            <span>Responders</span>
-          </router-link>
-          
-          <router-link to="/password-reset" class="nav-item">
-            <span class="nav-icon">🔑</span>
-            <span>Password Reset</span>
-          </router-link>
+        <router-link to="/responders" class="c-sidebar-nav-link">
+          <CIcon :icon="cilPeople" class="c-sidebar-nav-icon" /> Responders
+        </router-link>
+        
+        <router-link to="/password-reset" class="c-sidebar-nav-link">
+          <CIcon :icon="cilLockLocked" class="c-sidebar-nav-icon" /> Password Reset
+        </router-link>
 
-          <router-link to="/role-management" class="nav-item">
-            <span class="nav-icon">🛡️</span>
-            <span>Role Management</span>
-          </router-link>
-        </nav>
-      </aside>
+        <router-link to="/role-management" class="c-sidebar-nav-link">
+          <CIcon :icon="cilShieldAlt" class="c-sidebar-nav-icon" /> Role Management
+        </router-link>
+      </nav>
+    </aside>
 
-      <main class="content">
-        <router-view />
-      </main>
+    <div class="c-wrapper">
+      <header class="c-header">
+        <button class="c-header-toggler" @click="sidebarShow = !sidebarShow" aria-label="Toggle Sidebar">
+          ☰
+        </button>
+        
+        <span class="c-header-brand-title">{{ currentPageTitle }}</span>
+        
+        <ul class="c-header-nav">
+          <li class="c-header-nav-item">
+            <span class="user-welcome">Welcome, <strong>{{ userFullName }}</strong></span>
+          </li>
+          <li class="c-header-nav-item">
+            <button @click="logout" class="btn btn-outline-danger btn-sm header-logout-btn">
+              Logout
+            </button>
+          </li>
+        </ul>
+      </header>
+
+      <div class="c-body">
+        <main class="c-main">
+          <div class="container-fluid px-4">
+            <router-view v-slot="{ Component }">
+              <transition name="fade-slide" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
+          </div>
+        </main>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+
+// 1. Import CoreUI Icon Vue Component
+import { CIcon } from '@coreui/icons-vue'
+
+// 2. Import specific icons needed for this view
+import { 
+  cilSpeedometer, 
+  cilPeople, 
+  cilLockLocked, // <-- Replace cilKey with this
+  cilShieldAlt,
+  cilViewStream
+} from '@coreui/icons'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+
+const sidebarShow = ref(true)
 
 const userFullName = computed(() => {
   return authStore.admin?.full_name || 'Admin'
@@ -89,121 +105,224 @@ const logout = () => {
 </script>
 
 <style scoped>
-.admin-layout {
+.c-app {
+  display: flex;
+  flex-direction: row;
   min-height: 100vh;
-  background: #f8fafc;
+  background-color: #f4f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.navbar {
-  background: #1e2937;
-  color: white;
-  padding: 1rem 2rem;
+.c-sidebar {
+  width: 260px;
+  background: #1e222b;
+  color: #fff;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1030;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
-.navbar-left {
+.c-sidebar-brand {
+  height: 60px;
   display: flex;
   align-items: center;
-  gap: 2rem;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.5rem;
+  padding: 0 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
+  background: rgba(0, 0, 0, 0.15);
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Styled CoreUI SVG logo icon */
+.logo-icon-svg {
+  width: 24px;
+  height: 24px;
+  color: #4638e0;
 }
 
 .logo-text {
-  color: #60a5fa;
+  color: #4638e0;
+  letter-spacing: 0.5px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 1.35rem;
-  font-weight: 500;
-  color: #e2e8f0;
+.c-sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0;
 }
 
-.navbar-right {
+.c-sidebar-nav-link {
   display: flex;
   align-items: center;
+  padding: 0.85rem 1.5rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.c-sidebar-nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.c-sidebar-nav-link.router-link-active {
+  color: #fff;
+  background: #321fdb;
+  font-weight: 600;
+}
+
+/* Updated styling to control CoreUI SVG sizing perfectly inside nav */
+.c-sidebar-nav-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 1rem;
+}
+
+.c-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.c-header {
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #d8dbe0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.c-header-toggler {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: #4f5d73;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s;
+}
+
+.c-header-toggler:hover {
+  background-color: #f0f3f5;
+}
+
+.c-header-brand-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #3c4b64;
+  margin-left: 1.25rem;
+  margin-right: auto;
+}
+
+.c-header-nav {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   gap: 1.5rem;
 }
 
-.logout-btn {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 6px;
-  cursor: pointer;
+.user-welcome {
+  color: #4f5d73;
+  font-size: 0.9rem;
 }
 
-.main-container {
-  display: flex;
-  min-height: calc(100vh - 73px);
-}
-
-.sidebar {
-  width: 280px;
-  background: white;
-  border-right: 1px solid #e2e8f0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-  padding: 1.5rem 1rem;
-  position: fixed;           
-  top: 73px;                 
-  bottom: 0;
-  overflow-y: auto;
-  z-index: 90;
-}
-
-.sidebar-header {
-  padding: 0 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 1rem;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  color: #475569;
-  text-decoration: none;
-  border-radius: 10px;
-  margin-bottom: 4px;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.nav-item:hover {
-  background: #f1f5f9;
-  color: #1e40af;
-}
-
-.nav-item.router-link-active {
-  background: #3b82f6;
-  color: white;
-}
-
-.content {
+.c-body {
   flex: 1;
-  padding: 2rem;
-  margin-left: 280px;       
-  background: #f8fafc;
-  min-height: calc(100vh - 73px);
+}
+
+.c-main {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.container-fluid {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.px-4 {
+  padding-right: 1.5rem !important;
+  padding-left: 1.5rem !important;
+}
+
+.btn {
+  font-weight: 500;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.btn-outline-danger {
+  color: #e55353;
+  border-color: #e55353;
+  background: transparent;
+}
+
+.btn-outline-danger:hover {
+  color: #fff;
+  background-color: #e55353;
+}
+
+.btn-outline-danger:focus {
+  box-shadow: 0 0 0 0.2rem rgba(229, 83, 83, 0.3);
+  outline: none;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 0.25rem;
+}
+
+.header-logout-btn {
+  font-weight: 600;
+}
+
+/* Page Animations */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+@media (max-width: 768px) {
+  .c-sidebar {
+    position: fixed;
+    height: 100vh;
+    transform: translateX(-100%);
+  }
+  .c-sidebar.c-sidebar-show {
+    transform: translateX(0);
+  }
 }
 </style>
