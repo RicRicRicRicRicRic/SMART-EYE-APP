@@ -22,6 +22,8 @@ from .endpoints.admin.admin_responders import router as admin_responders_router
 from .endpoints.admin.admin_password_reset import router as admin_password_reset_router
 from .endpoints.admin.admin_role_management import router as admin_role_management_router
 
+from .endpoints.drone.drone_location import router as drone_location
+from .endpoints.drone.drone_status import router as drone_status
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login") 
@@ -52,6 +54,8 @@ app.include_router(admin_responders_router)
 app.include_router(admin_password_reset_router)
 app.include_router(admin_role_management_router)
 
+app.include_router(drone_location)
+app.include_router(drone_status)
 
 @app.get("/")
 def read_root():
