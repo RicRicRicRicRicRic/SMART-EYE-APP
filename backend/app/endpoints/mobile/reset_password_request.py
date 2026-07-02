@@ -32,19 +32,16 @@ async def request_password_reset(
 
     request_id = str(uuid.uuid4())
 
+    # FIX: Added created_at explicitly so it saves the timestamp to the DB
     reset_request = PasswordResetRequest(
         request_id=request_id,
         responder_id=user.responder_id,
         status=ResetStatus.PENDING,
+        created_at=datetime.utcnow(),  # <--- Ensures timestamp is stored
         expires_at=datetime.utcnow() + timedelta(hours=48)  
     )
 
     db.add(reset_request)
     db.commit()
 
-    logger.info(f"Password reset request created for {email} (ID: {request_id})")
-
-    return {
-        "message": "Your password reset request has been sent to the admin. You will be notified once approved.",
-        "request_id": request_id
-    }
+    return {"message": "Password reset request submitted successfully"}

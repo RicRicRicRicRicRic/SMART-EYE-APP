@@ -49,7 +49,9 @@
                 <td class="ps-4 font-weight-semibold py-3">{{ req.full_name }}</td>
                 <td class="text-secondary py-3">{{ req.email }}</td>
                 <td class="text-secondary py-3">{{ req.contact_number || '—' }}</td>
-                <td class="text-muted font-size-sm py-3">{{ new Date(req.request_date).toLocaleString() }}</td>
+                <td class="text-muted font-size-sm py-3">
+                  {{ req.created_at ? new Date(req.created_at).toLocaleString() : '—' }}
+                </td>
                 <td class="py-3">
                   <StatusBadge :status="req.status" />
                 </td>

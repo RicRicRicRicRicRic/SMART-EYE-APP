@@ -23,12 +23,12 @@ router = APIRouter(prefix="/admin", tags=["Admin Password Reset"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")  
 
 def generate_random_password(length: int = 12) -> str:
-    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    alphabet = string.ascii_letters + string.digits + "!@#$%^*"
     return ''.join(secrets.choice(alphabet) for i in range(length))
 
 @router.get("/password-reset/requests", response_model=List[dict])
 async def get_password_reset_requests(db: Session = Depends(get_db)):
-    """Core Point of Failure Fix: Fetch and list pending password reset submissions"""
+    """Fetch and list pending password reset submissions"""
     try:
         requests = db.query(
             ResetModel,
@@ -41,13 +41,18 @@ async def get_password_reset_requests(db: Session = Depends(get_db)):
         
         result = []
         for req, name, email in requests:
+            # ISO format conversion fallback for smooth Vue parsing
+            created_time = getattr(req, "created_at", None)
+            if created_time and hasattr(created_time, "isoformat"):
+                created_time = created_time.isoformat()
+
             result.append({
                 "request_id": getattr(req, "request_id", None),
                 "responder_id": req.responder_id,
                 "full_name": name,
                 "email": email,
                 "status": getattr(req, "status", "pending"),
-                "created_at": getattr(req, "created_at", None)
+                "created_at": created_time
             })
         return result
     except Exception as e:
@@ -77,12 +82,12 @@ async def reset_responder_password(
         new_password = generate_random_password(12)
         hashed_password = pwd_context.hash(new_password)
 
+        # Stage updates to the database
         responder.hashed_password = hashed_password
-        db.commit()
-        db.refresh(responder)
 
-        logging.info(f"Password reset for: {request.email}")
+        logging.info(f"Attempting administrative password reset for: {request.email}")
 
+        # Attempt Email dispatch before locking in database modifications
         try:
             smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
             smtp_port = int(os.getenv("SMTP_PORT", 587))
@@ -90,7 +95,7 @@ async def reset_responder_password(
             sender_password = os.getenv("SMTP_PASSWORD")
 
             if not all([sender_email, sender_password]):
-                raise Exception("Missing SMTP credentials in environmental layout context")
+                raise Exception("Missing SMTP credentials in environment context")
 
             message_body = f"""
 Dear {responder.full_name or 'Emergency Responder'},
@@ -116,10 +121,14 @@ Please log in and update your password immediately within your account dashboard
 
         except Exception as email_error:
             logging.error(f"Email delivery gateway crash: {str(email_error)}")
-            return {
-                "message": "Password updated in DB but notification email failed to dispatch",
-                "new_password": new_password
-            }
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Password not updated. Email dispatch failed: {str(email_error)}"
+            )
+
+        # Commit changes to DB only if the email dispatch goes through smoothly
+        db.commit()
+        db.refresh(responder)
 
         return {
             "message": "Password has been reset successfully and sent via email",

@@ -53,6 +53,7 @@ if HIVEMQ_CLUSTER and HIVEMQ_USERNAME and HIVEMQ_PASSWORD:
 
 def listen_to_mission_planner():
     from pymavlink import mavutil
+    global current_drone_location  # <--- Allow modifying the global variable
     
     logger.info("Opening local backend port on UDP 14550 for Mission Planner...")
     try:
@@ -66,10 +67,20 @@ def listen_to_mission_planner():
                     "longitude": msg.lon / 1.0e7,
                     "altitude": msg.alt / 1000.0,
                     "speed": msg.vx / 100.0,
-                    "heading": msg.hdg / 100.0
+                    "heading": msg.hdg / 100.0,
+                    "status": "live"
                 }
+                
+                # Direct local assignment so it updates IMMEDIATELY
+                current_drone_location = payload
+                
+                # Still try to publish to the cloud if configured
                 if HIVEMQ_CLUSTER:
-                    mqtt_client.publish(HIVEMQ_TOPIC, json.dumps(payload), qos=1)
+                    try:
+                        mqtt_client.publish(HIVEMQ_TOPIC, json.dumps(payload), qos=1)
+                    except Exception as mqtt_err:
+                        logger.error(f"Failed to publish to HiveMQ: {mqtt_err}")
+                        
     except Exception as e:
         logger.error(f"Local Mission Planner UDP bridge error: {e}")
 
