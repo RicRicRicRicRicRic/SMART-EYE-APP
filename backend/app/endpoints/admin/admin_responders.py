@@ -76,3 +76,21 @@ async def get_responders_stats(db: Session = Depends(get_db)):
         "pending": pending,
         "approved": approved
     }
+
+
+@router.delete("/responders/{responder_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_responder(responder_id: str, db: Session = Depends(get_db)):
+    """Permanently delete a rejected responder entry"""
+    responder = db.query(EmergencyResponder).filter(
+        EmergencyResponder.responder_id == responder_id
+    ).first()
+
+    if not responder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Responder not found"
+        )
+
+    db.delete(responder)
+    db.commit()
+    return None

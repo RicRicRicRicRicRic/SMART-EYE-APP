@@ -31,6 +31,11 @@ export const responderService = {
   async getStats() {
     const response = await api.get('/admin/responders/stats')
     return response.data
+  },
+
+  async delete(responderId: string) {
+    const response = await api.delete(`/admin/responders/${responderId}`)
+    return response.data
   }
 }
 

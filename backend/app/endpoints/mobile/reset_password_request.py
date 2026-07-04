@@ -30,18 +30,43 @@ async def request_password_reset(
             detail="Email not found! Please check your email or register first."
         )
 
+    # Check if the user already has a pending password reset request
+    existing_request = db.query(PasswordResetRequest).filter(
+        PasswordResetRequest.responder_id == user.responder_id,
+        PasswordResetRequest.status == ResetStatus.PENDING
+    ).first()
+
+    if existing_request:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A password reset request is already pending approval. Please wait for an administrator to process it."
+        )
+
     request_id = str(uuid.uuid4())
 
-    # FIX: Added created_at explicitly so it saves the timestamp to the DB
+    # Ensures timestamp is stored cleanly
     reset_request = PasswordResetRequest(
         request_id=request_id,
         responder_id=user.responder_id,
         status=ResetStatus.PENDING,
-        created_at=datetime.utcnow(),  # <--- Ensures timestamp is stored
-        expires_at=datetime.utcnow() + timedelta(hours=48)  
+        request_date=datetime.utcnow(),  
+        expires_at=datetime.utcnow() + timedelta(hours=24)
     )
 
-    db.add(reset_request)
-    db.commit()
-
-    return {"message": "Password reset request submitted successfully"}
+    try:
+        db.add(reset_request)
+        db.commit()
+        db.refresh(reset_request)
+        
+        logger.info(f"Password reset request registered successfully for tracking: {request_id}")
+        return {
+            "message": "Your password reset request has been submitted to administrators for verification.",
+            "request_id": request_id
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Database insertion failed for reset token tracker: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to register password reset request configuration."
+        )

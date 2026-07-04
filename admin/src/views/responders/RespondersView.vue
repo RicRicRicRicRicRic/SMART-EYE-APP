@@ -54,13 +54,14 @@
                 <th>Email Address</th>
                 <th>Phone Number</th>
                 <th>Approval Status</th>
+                <th>Activity Status</th>
                 <th>Registered Stamp</th>
                 <th class="text-right pe-4">System Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="filteredResponders.length === 0">
-                <td colspan="6" class="text-center py-5 text-muted empty-table-info">
+                <td colspan="7" class="text-center py-5 text-muted empty-table-info">
                   No matching responders records discovered.
                 </td>
               </tr>
@@ -71,6 +72,9 @@
                 <td class="py-3">
                   <StatusBadge :status="responder.approval_status.toLowerCase()" />
                 </td>
+                <td class="py-3">
+                  <StatusBadge :status="responder.is_active.toLowerCase()" />
+                </td>
                 <td class="text-muted font-size-sm py-3">
                   {{ new Date(responder.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }}
                 </td>
@@ -79,20 +83,47 @@
                     Your Account
                   </span>
                   <div v-else class="btn-group-custom">
-                    <button v-if="responder.approval_status === 'Pending'" 
-                            class="btn btn-success btn-sm me-1 font-weight-semibold"
-                            @click="updateStatus(responder.responder_id, { approval_status: 'Approved' })">
-                      Approve
-                    </button>
-                    <button v-if="responder.approval_status === 'Pending' || responder.approval_status === 'Approved'" 
-                            class="btn btn-danger btn-sm me-1 font-weight-semibold"
-                            @click="updateStatus(responder.responder_id, { approval_status: 'Rejected' })">
-                      Reject
-                    </button>
-                    <button v-if="responder.approval_status === 'Approved'" 
-                            class="btn btn-warning btn-sm text-white font-weight-semibold"
-                            @click="updateStatus(responder.responder_id, { is_active: 'suspended' })">
-                      Suspend
+                    <template v-if="responder.approval_status === 'Pending'">
+                      <button class="btn btn-success btn-sm me-1 font-weight-semibold"
+                              @click="updateStatus(responder.responder_id, { approval_status: 'Approved' })">
+                        Approve
+                      </button>
+                      <button class="btn btn-danger btn-sm me-1 font-weight-semibold"
+                              @click="updateStatus(responder.responder_id, { approval_status: 'Rejected' })">
+                        Reject
+                      </button>
+                    </template>
+
+                    <template v-if="responder.approval_status === 'Approved'">
+                      <button v-if="responder.is_active === 'active'"
+                              class="btn btn-secondary btn-sm me-1 font-weight-semibold"
+                              @click="updateStatus(responder.responder_id, { is_active: 'inactive' })">
+                        Set Inactive
+                      </button>
+
+                      <button v-if="responder.is_active === 'inactive'"
+                              class="btn btn-success btn-sm me-1 font-weight-semibold"
+                              @click="updateStatus(responder.responder_id, { is_active: 'active' })">
+                        Set Active
+                      </button>
+
+                      <button v-if="responder.is_active !== 'suspended'" 
+                              class="btn btn-warning btn-sm text-white font-weight-semibold me-1"
+                              @click="updateStatus(responder.responder_id, { is_active: 'suspended' })">
+                        Suspend
+                      </button>
+
+                      <button v-if="responder.is_active === 'suspended'"
+                              class="btn btn-success btn-sm me-1 font-weight-semibold"
+                              @click="updateStatus(responder.responder_id, { is_active: 'active' })">
+                        Set Active
+                      </button>
+                    </template>
+
+                    <button v-if="(responder.approval_status === 'Rejected' || responder.is_active === 'suspended') && isSuperAdmin" 
+                            class="btn btn-danger btn-sm font-weight-semibold"
+                            @click="deleteResponderRow(responder.responder_id)">
+                      Delete Entry
                     </button>
                   </div>
                 </td>
@@ -134,7 +165,12 @@ const isCurrentUser = (responder: Responder) => {
   return responder.responder_id === authStore.admin?.responder_id
 }
 
-const updateStatus = async (responderId: string, data: any) => {
+// Compute if active logged-in admin is a super_admin
+const isSuperAdmin = computed(() => {
+  return authStore.admin?.responder_role === 'super_admin'
+})
+
+const updateStatus = async (responderId: string, data: { approval_status?: string; is_active?: string }) => {
   if (!confirm('Are you sure you want to update this responder?')) return
 
   try {
@@ -143,6 +179,19 @@ const updateStatus = async (responderId: string, data: any) => {
     alert('Status updated successfully')
   } catch (error) {
     alert('Failed to update status')
+  }
+}
+
+const deleteResponderRow = async (responderId: string) => {
+  if (!confirm('Are you absolutely sure you want to permanently delete this entry? This action cannot be undone.')) return
+
+  try {
+    await responderService.delete(responderId)
+    await fetchResponders()
+    alert('Responder entry deleted successfully.')
+  } catch (error) {
+    console.error(error)
+    alert('Failed to delete responder entry.')
   }
 }
 
@@ -190,6 +239,8 @@ onMounted(fetchResponders)
 .btn-outline-primary:disabled { color: #94a3b8; cursor: not-allowed; }
 .btn-success { color: #fff; background-color: #2eb85c; border-color: #2eb85c; }
 .btn-success:hover { background-color: #228b44; }
+.btn-secondary { color: #fff; background-color: #6c757d; border-color: #6c757d; }
+.btn-secondary:hover { background-color: #5a6268; }
 .btn-danger { color: #fff; background-color: #e55353; border-color: #e55353; }
 .btn-danger:hover { background-color: #d93737; }
 .btn-warning { color: #fff; background-color: #f9b115; border-color: #f9b115; }

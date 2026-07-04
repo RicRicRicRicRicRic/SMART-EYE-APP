@@ -30,7 +30,7 @@ def generate_random_password(length: int = 12) -> str:
 async def get_password_reset_requests(db: Session = Depends(get_db)):
     """Fetch and list pending password reset submissions"""
     try:
-        requests = db.query(
+        results = db.query(
             ResetModel,
             EmergencyResponder.full_name,
             EmergencyResponder.email
@@ -38,73 +38,74 @@ async def get_password_reset_requests(db: Session = Depends(get_db)):
             EmergencyResponder, 
             ResetModel.responder_id == EmergencyResponder.responder_id
         ).all()
-        
-        result = []
-        for req, name, email in requests:
-            # ISO format conversion fallback for smooth Vue parsing
-            created_time = getattr(req, "created_at", None)
-            if created_time and hasattr(created_time, "isoformat"):
-                created_time = created_time.isoformat()
 
-            result.append({
-                "request_id": getattr(req, "request_id", None),
-                "responder_id": req.responder_id,
-                "full_name": name,
-                "email": email,
-                "status": getattr(req, "status", "pending"),
-                "created_at": created_time
+        formatted_requests = []
+        for reset_req, full_name, email in results:
+            formatted_requests.append({
+                "request_id": reset_req.request_id,
+                "responder_id": reset_req.responder_id,
+                "status": reset_req.status,
+                "request_date": reset_req.request_date.isoformat() if reset_req.request_date else None,
+                "expires_at": reset_req.expires_at.isoformat() if reset_req.expires_at else None,
+                "full_name": full_name,
+                "email": email
             })
-        return result
+        return formatted_requests
     except Exception as e:
-        logging.error(f"Failed to query database password reset tickets: {str(e)}")
+        logging.error(f"Error fetching password reset requests: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not retrieve password reset entries"
+            detail=f"Internal error during request fetching: {str(e)}"
         )
 
-@router.post("/password-reset", response_model=PasswordResetResponse)
-async def reset_responder_password(
-    request: PasswordResetRequest,
-    db: Session = Depends(get_db)
-):
-    """Reset password for a specific email and send it directly via Email"""
+@router.post("/password-reset/approve/{request_id}")
+async def approve_password_reset(request_id: str, db: Session = Depends(get_db)):
+    """Approve a password reset request, generate random password, and email it"""
     try:
+        reset_request = db.query(ResetModel).filter(ResetModel.request_id == request_id).first()
+        if not reset_request:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Password reset request not found"
+            )
+
+        if reset_request.status != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"This request has already been processed with status: {reset_request.status}"
+            )
+
         responder = db.query(EmergencyResponder).filter(
-            EmergencyResponder.email == request.email.strip().lower()
+            EmergencyResponder.responder_id == reset_request.responder_id
         ).first()
 
         if not responder:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User with this email does not exist"
+                detail="Responder associated with this request not found"
             )
 
-        new_password = generate_random_password(12)
-        hashed_password = pwd_context.hash(new_password)
+        new_password = generate_random_password()
+        responder.hashed_password = pwd_context.hash(new_password)
+        reset_request.status = "completed"
 
-        # Stage updates to the database
-        responder.hashed_password = hashed_password
-
-        logging.info(f"Attempting administrative password reset for: {request.email}")
-
-        # Attempt Email dispatch before locking in database modifications
+        # Email notification dispatch setup
         try:
             smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-            smtp_port = int(os.getenv("SMTP_PORT", 587))
+            smtp_port = int(os.getenv("SMTP_PORT", "587"))
             sender_email = os.getenv("SMTP_EMAIL")
             sender_password = os.getenv("SMTP_PASSWORD")
 
-            if not all([sender_email, sender_password]):
-                raise Exception("Missing SMTP credentials in environment context")
+            if not sender_email or not sender_password:
+                raise Exception("SMTP credentials are misconfigured or missing in .env environment")
 
             message_body = f"""
-Dear {responder.full_name or 'Emergency Responder'},
+Dear {responder.full_name},
 
-Your SMART-EYE account password has been successfully reset.
+Your SMART-EYE administrative password reset request has been approved.
+Your new temporary password is: {new_password}
 
-New Password: {new_password}
-
-Please log in and update your password immediately within your account dashboard settings.
+Please log in to your account using this temporary credential and change your password immediately within your account dashboard settings.
 """
             msg = MIMEText(message_body.strip())
             msg["Subject"] = "SMART-EYE Administrative Password Reset"
@@ -141,5 +142,39 @@ Please log in and update your password immediately within your account dashboard
         logging.error(f"Password reset error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to reset password"
+            detail=f"Internal error during credential resolution processing: {str(e)}"
+        )
+
+@router.post("/password-reset/reject/{request_id}")
+async def reject_password_reset(request_id: str, db: Session = Depends(get_db)):
+    """Reject a password reset request and set its status to cancelled"""
+    try:
+        reset_request = db.query(ResetModel).filter(ResetModel.request_id == request_id).first()
+        if not reset_request:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Password reset request not found"
+            )
+
+        if reset_request.status != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"This request has already been processed with status: {reset_request.status}"
+            )
+
+        # Set status to cancelled as requested
+        reset_request.status = "cancelled"
+        db.commit()
+
+        return {
+            "message": "Password reset request has been rejected and cancelled successfully."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error rejecting password request: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal error during rejection processing: {str(e)}"
         )
