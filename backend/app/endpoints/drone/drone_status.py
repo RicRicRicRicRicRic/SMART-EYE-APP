@@ -6,8 +6,10 @@ Endpoint and MQTT listener for real-time drone telemetry status.
 import os
 import json
 import logging
+import threading
 from fastapi import APIRouter, Depends, status
 import paho.mqtt.client as mqtt
+from pymavlink import mavutil
 
 from ...database import get_db
 from ...models.emergency_responder import EmergencyResponder
@@ -148,6 +150,37 @@ if HIVEMQ_CLUSTER and HIVEMQ_USERNAME and HIVEMQ_PASSWORD:
         logger.error(f"Failed to connect to HiveMQ broker: {e}")
 else:
     logger.warning("HiveMQ configuration missing in environment variables.")
+
+def listen_to_mission_planner_status():
+    global local_drone_status
+    logger.info("Opening local status port on UDP 14550 for Mission Planner...")
+    try:
+        # Note: Use standard MAVLink UDP input port
+        mav_conn = mavutil.mavlink_connection('udp:127.0.0.1:14550')
+        
+        while True:
+            # Catch SYS_STATUS (for battery) or VFR_HUD (for altitude/speed)
+            msg = mav_conn.recv_match(type=['SYS_STATUS', 'VFR_HUD'], blocking=True)
+            if msg:
+                msg_type = msg.get_type()
+                
+                if msg_type == 'SYS_STATUS':
+                    # battery_remaining is in % (0-100)
+                    if msg.battery_remaining != -1:
+                        local_drone_status["battery"] = msg.battery_remaining
+                        
+                elif msg_type == 'VFR_HUD':
+                    local_drone_status["altitude"] = round(msg.alt, 1)
+                    local_drone_status["speed"] = round(msg.groundspeed, 1)
+                
+                local_drone_status["status"] = "live"
+                
+    except Exception as e:
+        logger.error(f"Local status MAVLink UDP bridge error: {e}")
+
+# Start thread on launch
+udp_status_thread = threading.Thread(target=listen_to_mission_planner_status, daemon=True)
+udp_status_thread.start()
 
 @router.get("/status", status_code=status.HTTP_200_OK)
 async def get_drone_status(
